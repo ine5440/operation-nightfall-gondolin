@@ -99,8 +99,7 @@ def tuner(argv):
                 # print("Happy compilation")
                 pass
             else:
-                print("Sad compilation")
-                print()
+                print("Sad compilation\n")
                 continue
 
             # Run code
