@@ -19,15 +19,56 @@ def tuner(argv):
     compilation_line = ['gcc','-o',exec_file,'mm.c']
     steps = ['-DSTEP=2']
 
-    opt_levels = ['-O2', '-O3', '-Ofast']
+    opt_levels = ['-O2', '-O3']
     opt_flags = [
-            '-march=native', '-ffp-contract=on', '-fgcse-sm', '-fgcse-las',
-            '-fipa-pta', '-flto'
+            '-ffast-math',
+            '-ffp-contract=on',
+            '-fgcse-las',
+            '-fgcse-sm',
+            '-fipa-pta',
+            '-flto',
+            '-march=native',
             ]
+
+    line = compilation_line + ['-O2'] + steps
+    print(' '.join(line))
+    compilation_try = subprocess.run(line)
+    if (compilation_try.returncode != 0):
+        print('Sad compilation')
+        return
+
+    # Run code
+    iterations = int(argv[0]) if len(argv) > 0 else 100
+    input_size = argv[1] if len(argv) > 1 else "8"
+    t_begin = time.time() # timed run
+    for i in range(iterations):
+        run_trial = subprocess.run(['./'+exec_file, input_size], stdout=subprocess.DEVNULL)
+    t_end = time.time()
+    threshold = float(argv[2]) if len(argv) > 2 else 0.99
+    print(t_end-t_begin)
+    expected_time = (t_end - t_begin) * threshold
+
+    useful_flags = []
+    for flag in opt_flags:
+        print(f'Checking flag {flag}... ', end='')
+        line = compilation_line + ['-O2', flag] + steps
+        compilation_try = subprocess.run(line)
+        if (compilation_try.returncode != 0):
+            continue
+
+        # Run code
+        t_begin = time.time() # timed run
+        for i in range(iterations):
+            run_trial = subprocess.run(['./'+exec_file, input_size], stdout=subprocess.DEVNULL)
+        t_end = time.time()
+        print(t_end-t_begin)
+        if run_trial.returncode == 0 and t_end-t_begin < expected_time:
+            useful_flags.append(flag)
+    print(f'Flags that might be useful: {", ".join(useful_flags)}\n')
 
     times = []
     for level in opt_levels:
-        for flags in closure(opt_flags):
+        for flags in closure(useful_flags):
             # Compile code
             line = compilation_line + [level] + list(flags) + steps
             print(' '.join(line))
@@ -37,11 +78,12 @@ def tuner(argv):
                 pass
             else:
                 print("Sad compilation")
+                print()
+                continue
 
             # Run code
-            input_size = str(8)
             t_begin = time.time() # timed run
-            for i in range(25):
+            for i in range(iterations):
                 run_trial = subprocess.run(['./'+exec_file, input_size], stdout=subprocess.DEVNULL)
             t_end = time.time()
             if (run_trial.returncode == 0):
