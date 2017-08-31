@@ -118,8 +118,10 @@ def tuner(argv):
             print()
 
     times.sort(key=lambda e: e[0])
-    for i in range(3):
-        print(f'{i}: {times[i][0]} - {times[i][1]}')
+    for i in range(5):
+        print(f'{i+1}: {times[i][0]} - {times[i][1]}')
+
+    print(f'Suggested compilation line: {" ".join(compilation_line)} {times[0][1]} {steps[0]}')
 
 
 if __name__ == "__main__":
