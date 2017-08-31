@@ -48,6 +48,28 @@ def tuner(argv):
     print(t_end-t_begin)
     expected_time = (t_end - t_begin) * threshold
 
+    s = 2
+    while True:
+        s *= 2
+        print(f'Checking STEP={s}... ', end='')
+        line = compilation_line + ['-O2', f'-DSTEP={s}']
+        compilation_try = subprocess.run(line)
+        if (compilation_try.returncode != 0):
+            continue
+
+        # Run code
+        t_begin = time.time() # timed run
+        for i in range(iterations):
+            run_trial = subprocess.run(['./'+exec_file, input_size], stdout=subprocess.DEVNULL)
+        t_end = time.time()
+        print(t_end-t_begin)
+        if run_trial.returncode == 0 and t_end-t_begin < expected_time:
+            steps = [f'-DSTEP={s}']
+            expected_time = (t_end - t_begin) * threshold
+        else:
+            break
+    print(f'Chose {steps[0]}')
+
     useful_flags = []
     for flag in opt_flags:
         print(f'Checking flag {flag}... ', end='')
